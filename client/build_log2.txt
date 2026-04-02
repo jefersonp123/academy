@@ -1,0 +1,7 @@
+src/components/ui/Input.tsx(4,18): error TS2430: Interface 'InputProps' incorrectly extends interface 'InputHTMLAttributes<HTMLInputElement>'.
+  Types of property 'size' are incompatible.
+    Type '"sm" | "md" | undefined' is not assignable to type 'number | undefined'.
+      Type 'string' is not assignable to type 'number'.
+src/layouts/components/Sidebar.tsx(3,10): error TS2724: '"@/store/uiStore"' has no exported member named 'useUiStore'. Did you mean 'useUIStore'?
+src/layouts/components/Topbar.tsx(2,10): error TS2724: '"@/store/uiStore"' has no exported member named 'useUiStore'. Did you mean 'useUIStore'?
+src/lib/api/client.ts(3,30): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
