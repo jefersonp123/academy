@@ -1,0 +1,6 @@
+export { LoginPage } from './LoginPage'
+export { RegisterPage } from './RegisterPage'
+export { ForgotPasswordPage } from './ForgotPasswordPage'
+export { ResetPasswordPage } from './ResetPasswordPage'
+export { AcceptInvitationPage } from './AcceptInvitationPage'
+export { SelectAcademyPage } from './SelectAcademyPage'

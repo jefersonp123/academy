@@ -1,0 +1,6 @@
+export { PortalTrainingPage } from './PortalTrainingPage'
+export { PortalPaymentsPage } from './PortalPaymentsPage'
+export { PortalAccountStatusPage } from './PortalAccountStatusPage'
+export { PortalTournamentsPage } from './PortalTournamentsPage'
+export { PortalNotificationsPage } from './PortalNotificationsPage'
+export { PortalProfilePage } from './PortalProfilePage'

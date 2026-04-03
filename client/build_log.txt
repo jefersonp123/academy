@@ -1,0 +1,42 @@
+src/components/ui/Input.tsx(4,18): error TS2430: Interface 'InputProps' incorrectly extends interface 'InputHTMLAttributes<HTMLInputElement>'.
+  Types of property 'size' are incompatible.
+    Type '"sm" | "md" | undefined' is not assignable to type 'number | undefined'.
+      Type 'string' is not assignable to type 'number'.
+src/features/athletes/AthleteDetailPage.tsx(5,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/athletes/AthleteNewPage.tsx(4,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/auth/AcceptInvitationPage.tsx(3,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/auth/ForgotPasswordPage.tsx(3,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/auth/LoginPage.tsx(3,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/auth/RegisterPage.tsx(3,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/auth/ResetPasswordPage.tsx(3,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/billing/BillingPage.tsx(17,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/categories/CategoriesPage.tsx(5,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/categories/CategoryDetailPage.tsx(5,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/expenses/ExpenseDetailPage.tsx(6,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/expenses/ExpensesPage.tsx(6,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/incomes/IncomeDetailPage.tsx(6,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/incomes/IncomePage.tsx(6,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/members/InvitationsNewPage.tsx(5,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/members/MemberDetailPage.tsx(87,47): error TS2322: Type '{ src: string | undefined; fallback: string; size: "lg"; }' is not assignable to type 'IntrinsicAttributes & AvatarProps'.
+  Property 'fallback' does not exist on type 'IntrinsicAttributes & AvatarProps'.
+src/features/members/MembersPage.tsx(105,25): error TS2322: Type '{ src: string | undefined; fallback: string; size: "md"; }' is not assignable to type 'IntrinsicAttributes & AvatarProps'.
+  Property 'fallback' does not exist on type 'IntrinsicAttributes & AvatarProps'.
+src/features/payments/PaymentReportDetailPage.tsx(5,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/platform/PlatformAcademiesPage.tsx(6,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/platform/PlatformAcademyDetailPage.tsx(6,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/portal/PortalPaymentsPage.tsx(5,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/portal/PortalProfilePage.tsx(4,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/portal/PortalProfilePage.tsx(48,43): error TS2322: Type '{ src: string | undefined; fallback: string; size: "lg"; }' is not assignable to type 'IntrinsicAttributes & AvatarProps'.
+  Property 'fallback' does not exist on type 'IntrinsicAttributes & AvatarProps'.
+src/features/profile/ProfilePage.tsx(4,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/profile/ProfilePage.tsx(60,45): error TS2322: Type '{ src: string | undefined; fallback: string; size: "lg"; }' is not assignable to type 'IntrinsicAttributes & AvatarProps'.
+  Property 'fallback' does not exist on type 'IntrinsicAttributes & AvatarProps'.
+src/features/settings/SettingsBrandPage.tsx(4,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/settings/SettingsNotificationsPage.tsx(4,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/settings/SettingsSystemPage.tsx(4,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/tournaments/TournamentsPage.tsx(6,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/trainings/TrainingDetailPage.tsx(5,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/features/trainings/TrainingsPage.tsx(5,29): error TS2307: Cannot find module '@hookform/resolvers/zod' or its corresponding type declarations.
+src/layouts/components/Sidebar.tsx(3,10): error TS2724: '"@/store/uiStore"' has no exported member named 'useUiStore'. Did you mean 'useUIStore'?
+src/layouts/components/Topbar.tsx(2,10): error TS2724: '"@/store/uiStore"' has no exported member named 'useUiStore'. Did you mean 'useUIStore'?
+src/lib/api/client.ts(3,30): error TS2339: Property 'env' does not exist on type 'ImportMeta'.
