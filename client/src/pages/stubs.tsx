@@ -13,6 +13,7 @@ export { DashboardPage } from '@/features/dashboard/DashboardPage'
 export { AthletesPage } from '@/features/athletes/AthletesPage'
 export { AthleteDetailPage } from '@/features/athletes/AthleteDetailPage'
 export { AthleteNewPage } from '@/features/athletes/AthleteNewPage'
+export { AthleteEditPage } from '@/features/athletes/AthleteEditPage'
 
 // ─── Categories ───────────────────────────────────────────────────────────────
 export { CategoriesPage } from '@/features/categories/CategoriesPage'

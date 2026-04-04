@@ -14,6 +14,7 @@ export const ROUTES = {
   ATHLETES: '/app/athletes',
   ATHLETE_NEW: '/app/athletes/new',
   ATHLETE_DETAIL: (id: string) => `/app/athletes/${id}`,
+  ATHLETE_EDIT: (id: string) => `/app/athletes/${id}/edit`,
   CATEGORIES: '/app/categories',
   CATEGORY_DETAIL: (id: string) => `/app/categories/${id}`,
   TRAININGS: '/app/trainings',

@@ -1,12 +1,12 @@
 import api from './client';
-import type { AthleteEnrollment, GuardianLink, ListParams } from '@/types';
+import type { Athlete, AthleteEnrollment, GuardianLink, ListParams } from '@/types';
 
 export const athletesApi = {
   list: (academyId: string, params?: ListParams) =>
-    api.get<unknown, { data: AthleteEnrollment[]; meta: unknown }>(`/academies/${academyId}/athletes`, { params }),
+    api.get<unknown, AthleteEnrollment[]>(`/academies/${academyId}/athletes`, { params }),
 
   create: (academyId: string, payload: Record<string, unknown>) =>
-    api.post<unknown, { athlete: unknown; enrollment: AthleteEnrollment }>(`/academies/${academyId}/athletes`, payload),
+    api.post<unknown, { athlete: Athlete; enrollment: AthleteEnrollment }>(`/academies/${academyId}/athletes`, payload),
 
   getById: (academyId: string, id: string) =>
     api.get<unknown, AthleteEnrollment>(`/academies/${academyId}/athletes/${id}`),

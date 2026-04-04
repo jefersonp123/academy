@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -19,28 +20,27 @@ import {
   Input,
   Select,
   Textarea,
+  Skeleton,
+  EmptyState,
 } from '@/components/ui'
 import { ROUTES } from '@/lib/constants'
 import { getApiErrorMessage } from '@/lib/utils'
 
 // ─── Schema ──────────────────────────────────────────────────────────────────
 
-const athleteSchema = z.object({
+const editAthleteSchema = z.object({
   first_name: z.string().min(2, 'Mínimo 2 caracteres'),
   last_name: z.string().min(2, 'Mínimo 2 caracteres'),
   birth_date: z.string().min(1, 'Requerido'),
   gender: z.string().optional(),
-  nationality: z.string().optional(),
-  blood_type: z.string().optional(),
+  document_number: z.string().optional(),
   phone: z.string().optional(),
-  allergies: z.string().optional(),
-  medical_conditions: z.string().optional(),
-  emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().optional(),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  notes: z.string().optional(),
   category_id: z.string().min(1, 'Selecciona una categoría'),
 })
 
-type AthleteFormValues = z.infer<typeof athleteSchema>
+type EditAthleteFormValues = z.infer<typeof editAthleteSchema>
 
 // ─── Options ─────────────────────────────────────────────────────────────────
 
@@ -50,23 +50,19 @@ const GENDER_OPTIONS = [
   { value: 'other', label: 'Otro' },
 ]
 
-const BLOOD_TYPE_OPTIONS = [
-  { value: 'A+', label: 'A+' },
-  { value: 'A-', label: 'A-' },
-  { value: 'B+', label: 'B+' },
-  { value: 'B-', label: 'B-' },
-  { value: 'AB+', label: 'AB+' },
-  { value: 'AB-', label: 'AB-' },
-  { value: 'O+', label: 'O+' },
-  { value: 'O-', label: 'O-' },
-]
-
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-export function AthleteNewPage() {
+export function AthleteEditPage() {
+  const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const academyId = useAuthStore((s) => s.activeAcademy?.id) ?? ''
+
+  const { data: enrollment, isLoading } = useQuery({
+    queryKey: ['athlete.detail', academyId, id],
+    queryFn: () => athletesApi.getById(academyId, id!),
+    enabled: !!academyId && !!id,
+  })
 
   const { data: categories = [] } = useQuery({
     queryKey: ['categories.list', academyId],
@@ -76,55 +72,115 @@ export function AthleteNewPage() {
 
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
 
+  const athlete = enrollment?.athletes
+  const initialCategoryId = useRef<string>('')
+
   const {
     register,
     control,
     handleSubmit,
-    formState: { errors },
-  } = useForm<AthleteFormValues>({
-    resolver: zodResolver(athleteSchema),
+    reset,
+    formState: { errors, isDirty },
+  } = useForm<EditAthleteFormValues>({
+    resolver: zodResolver(editAthleteSchema),
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      birth_date: '',
+      gender: '',
+      document_number: '',
+      phone: '',
+      email: '',
+      notes: '',
+      category_id: '',
+    },
   })
+
+  // Populate form when data loads
+  useEffect(() => {
+    if (athlete && enrollment && categories.length > 0) {
+      const catId = enrollment.categories?.id ?? ''
+      initialCategoryId.current = catId
+
+      reset({
+        first_name: athlete.first_name ?? '',
+        last_name: athlete.last_name ?? '',
+        birth_date: athlete.birth_date ?? '',
+        gender: athlete.gender ?? '',
+        document_number: athlete.document_number ?? '',
+        phone: athlete.phone ?? '',
+        email: athlete.email ?? '',
+        notes: athlete.notes ?? '',
+        category_id: catId,
+      })
+    }
+  }, [athlete, enrollment, categories, reset])
 
   const mutation = useMutation({
-    mutationFn: (data: AthleteFormValues) => {
-      const payload: Record<string, unknown> = {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        birth_date: data.birth_date,
-        category_id: data.category_id,
+    mutationFn: async (data: EditAthleteFormValues) => {
+      const { category_id, ...athleteFields } = data
+
+      // 1. Update athlete personal data
+      const payload: Record<string, unknown> = {}
+      if (athleteFields.first_name) payload.first_name = athleteFields.first_name
+      if (athleteFields.last_name) payload.last_name = athleteFields.last_name
+      if (athleteFields.birth_date) payload.birth_date = athleteFields.birth_date
+      if (athleteFields.gender) payload.gender = athleteFields.gender
+      if (athleteFields.document_number !== undefined) payload.document_number = athleteFields.document_number || null
+      if (athleteFields.phone !== undefined) payload.phone = athleteFields.phone || null
+      if (athleteFields.email !== undefined) payload.email = athleteFields.email || null
+      if (athleteFields.notes !== undefined) payload.notes = athleteFields.notes || null
+
+      const promises: Promise<unknown>[] = [
+        athletesApi.update(academyId, id!, payload),
+      ]
+
+      // 2. Update category only if it changed
+      if (category_id && category_id !== initialCategoryId.current) {
+        promises.push(athletesApi.updateCategory(academyId, id!, category_id))
       }
-      if (data.gender) payload.gender = data.gender
-      if (data.nationality) payload.nationality = data.nationality
-      if (data.blood_type) payload.blood_type = data.blood_type
-      if (data.phone) payload.phone = data.phone
-      if (data.allergies) payload.allergies = data.allergies
-      if (data.medical_conditions) payload.medical_conditions = data.medical_conditions
-      if (data.emergency_contact_name) payload.emergency_contact_name = data.emergency_contact_name
-      if (data.emergency_contact_phone) payload.emergency_contact_phone = data.emergency_contact_phone
-      return athletesApi.create(academyId, payload)
+
+      await Promise.all(promises)
     },
-    onSuccess: (res) => {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['athlete.detail', academyId, id] })
       queryClient.invalidateQueries({ queryKey: ['athletes.list', academyId] })
-      toast.success('Atleta registrado exitosamente')
-      const athleteId = res.athlete?.id
-      if (athleteId) {
-        navigate(ROUTES.ATHLETE_DETAIL(athleteId))
-      } else {
-        navigate(ROUTES.ATHLETES)
-      }
+      toast.success('Atleta actualizado exitosamente')
+      navigate(ROUTES.ATHLETE_DETAIL(id!))
     },
-    onError: (err) => toast.error(getApiErrorMessage(err, 'Error al registrar atleta')),
+    onError: (err) => toast.error(getApiErrorMessage(err, 'Error al actualizar atleta')),
   })
 
-  const onSubmit = (data: AthleteFormValues) => mutation.mutate(data)
+  const onSubmit = (data: EditAthleteFormValues) => mutation.mutate(data)
+
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-[300px] w-full rounded-2xl" />
+        <Skeleton className="h-[200px] w-full rounded-2xl" />
+      </div>
+    )
+  }
+
+  if (!enrollment || !athlete) {
+    return (
+      <EmptyState
+        title="Atleta no encontrado"
+        description="El atleta solicitado no existe o fue eliminado"
+        action={{ label: 'Volver a atletas', onClick: () => navigate(ROUTES.ATHLETES) }}
+      />
+    )
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
       <PageHeader
-        title="Registrar Atleta"
+        title="Editar Atleta"
         breadcrumbs={[
           { label: 'Atletas', href: ROUTES.ATHLETES },
-          { label: 'Nuevo' },
+          { label: `${athlete.first_name} ${athlete.last_name}`, href: ROUTES.ATHLETE_DETAIL(id!) },
+          { label: 'Editar' },
         ]}
       />
 
@@ -157,13 +213,6 @@ export function AthleteNewPage() {
                 fullWidth
                 {...register('birth_date')}
               />
-              <Input
-                label="Nacionalidad"
-                placeholder="Ej: Venezolano"
-                error={errors.nationality?.message}
-                fullWidth
-                {...register('nationality')}
-              />
               <Controller
                 control={control}
                 name="gender"
@@ -173,33 +222,33 @@ export function AthleteNewPage() {
                     options={GENDER_OPTIONS}
                     value={field.value ?? ''}
                     onValueChange={field.onChange}
-                    placeholder="Seleccionar género"
                     error={errors.gender?.message}
                   />
                 )}
               />
-              <Controller
-                control={control}
-                name="blood_type"
-                render={({ field }) => (
-                  <Select
-                    label="Tipo de sangre"
-                    options={BLOOD_TYPE_OPTIONS}
-                    value={field.value ?? ''}
-                    onValueChange={field.onChange}
-                    placeholder="Seleccionar tipo"
-                    error={errors.blood_type?.message}
-                  />
-                )}
+              <Input
+                label="Documento de identidad"
+                placeholder="Ej: V-12345678"
+                error={errors.document_number?.message}
+                fullWidth
+                {...register('document_number')}
+              />
+              <Input
+                label="Email"
+                type="email"
+                placeholder="correo@ejemplo.com"
+                error={errors.email?.message}
+                fullWidth
+                {...register('email')}
               />
             </div>
           </CardContent>
         </Card>
 
-        {/* Section 2 — Contact & Medical */}
+        {/* Section 2 — Contact & Notes */}
         <Card>
           <CardHeader>
-            <CardTitle>Contacto y Médico</CardTitle>
+            <CardTitle>Contacto y Notas</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -211,37 +260,13 @@ export function AthleteNewPage() {
                 {...register('phone')}
               />
               <Textarea
-                label="Alergias"
-                placeholder="Describe las alergias conocidas (opcional)"
-                rows={3}
-                error={errors.allergies?.message}
+                label="Notas"
+                placeholder="Observaciones o notas adicionales (opcional)"
+                rows={4}
+                error={errors.notes?.message}
                 fullWidth
-                {...register('allergies')}
+                {...register('notes')}
               />
-              <Textarea
-                label="Condiciones médicas"
-                placeholder="Describe condiciones médicas relevantes (opcional)"
-                rows={3}
-                error={errors.medical_conditions?.message}
-                fullWidth
-                {...register('medical_conditions')}
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  label="Contacto de emergencia"
-                  placeholder="Nombre"
-                  error={errors.emergency_contact_name?.message}
-                  fullWidth
-                  {...register('emergency_contact_name')}
-                />
-                <Input
-                  label="Teléfono de emergencia"
-                  placeholder="+58 412 000 0000"
-                  error={errors.emergency_contact_phone?.message}
-                  fullWidth
-                  {...register('emergency_contact_phone')}
-                />
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -261,7 +286,6 @@ export function AthleteNewPage() {
                   options={categoryOptions}
                   value={field.value ?? ''}
                   onValueChange={field.onChange}
-                  placeholder="Seleccionar categoría"
                   error={errors.category_id?.message}
                 />
               )}
@@ -271,12 +295,12 @@ export function AthleteNewPage() {
             <Button
               variant="outline"
               type="button"
-              onClick={() => navigate(ROUTES.ATHLETES)}
+              onClick={() => navigate(ROUTES.ATHLETE_DETAIL(id!))}
             >
               Cancelar
             </Button>
-            <Button type="submit" loading={mutation.isPending}>
-              Registrar Atleta
+            <Button type="submit" loading={mutation.isPending} disabled={!isDirty}>
+              Guardar Cambios
             </Button>
           </CardFooter>
         </Card>
