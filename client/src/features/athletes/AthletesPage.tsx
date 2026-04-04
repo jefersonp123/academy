@@ -94,7 +94,7 @@ export function AthletesPage() {
     enabled: !!academyId,
   })
 
-  const enrollments: AthleteEnrollment[] = athletesResponse?.data ?? []
+  const enrollments: AthleteEnrollment[] = athletesResponse ?? []
 
   const categoryOptions = [
     { value: '', label: 'Todas las categorías' },
@@ -172,13 +172,16 @@ export function AthletesPage() {
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {enrollments.map((enrollment) => (
-            <AthleteCard
-              key={enrollment.id}
-              enrollment={enrollment}
-              onClick={() => navigate(ROUTES.ATHLETE_DETAIL(enrollment.id))}
-            />
-          ))}
+          {enrollments.map((enrollment) => {
+            const athleteId = enrollment.athletes?.id ?? enrollment.id
+            return (
+              <AthleteCard
+                key={enrollment.id}
+                enrollment={enrollment}
+                onClick={() => navigate(ROUTES.ATHLETE_DETAIL(athleteId))}
+              />
+            )
+          })}
         </div>
       )}
     </div>

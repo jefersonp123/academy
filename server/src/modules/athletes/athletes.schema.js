@@ -10,7 +10,7 @@ export const createAthlete = Joi.object({
   email: Joi.string().email().allow('', null).optional(),
   notes: Joi.string().max(1000).allow('', null).optional(),
   category_id: Joi.string().uuid().optional(),
-  medical_clearance_status: Joi.string().valid('pending','approved','expired').optional(),
+  medical_clearance_status: Joi.string().valid('pending', 'approved', 'expired').optional(),
 });
 
 export const updateAthlete = Joi.object({
@@ -25,7 +25,7 @@ export const updateAthlete = Joi.object({
 });
 
 export const updateStatus = Joi.object({
-  membership_status: Joi.string().valid('active','inactive','suspended','archived').required(),
+  membership_status: Joi.string().valid('active', 'inactive', 'suspended', 'archived').required(),
 });
 
 export const updateCategory = Joi.object({
@@ -34,6 +34,6 @@ export const updateCategory = Joi.object({
 
 export const addGuardian = Joi.object({
   guardian_profile_id: Joi.string().uuid().required(),
-  relationship_type: Joi.string().valid('parent','legal_guardian','relative','other').required(),
+  relationship_type: Joi.string().valid('parent', 'legal_guardian', 'relative', 'other').required(),
   is_primary: Joi.boolean().default(false),
 });
