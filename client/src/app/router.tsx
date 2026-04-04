@@ -97,6 +97,7 @@ export const router = createBrowserRouter([
       { path: 'athletes', element: wrap(S.AthletesPage) },
       { path: 'athletes/new', element: wrap(S.AthleteNewPage) },
       { path: 'athletes/:id', element: wrap(S.AthleteDetailPage) },
+      { path: 'athletes/:id/edit', element: wrap(S.AthleteEditPage) },
       { path: 'categories', element: wrap(S.CategoriesPage) },
       { path: 'categories/:id', element: wrap(S.CategoryDetailPage) },
       { path: 'trainings', element: wrap(S.TrainingsPage) },

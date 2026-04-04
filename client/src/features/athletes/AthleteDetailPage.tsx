@@ -486,7 +486,7 @@ export function AthleteDetailPage() {
             size="sm"
             leftIcon={<Edit className="w-4 h-4" />}
             className="border-white/30 text-white hover:bg-white/10 hover:text-white"
-            onClick={() => toast.info('Edición próximamente')}
+            onClick={() => navigate(ROUTES.ATHLETE_EDIT(id!))}
           >
             Editar
           </Button>

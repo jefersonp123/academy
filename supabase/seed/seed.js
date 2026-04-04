@@ -9,7 +9,16 @@
  * Requiere: server/.env con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Obtener la ruta del directorio actual
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Configurar dotenv apuntando a la carpeta /server
+dotenv.config({ path: path.resolve(__dirname, '../../server/.env') });
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(

@@ -38,6 +38,25 @@ export function Select({
   const selectId = id ?? generatedId;
   const hasError = Boolean(error);
 
+  // Check if options include an explicit "all" option (empty value)
+  const hasAllOption = options.some((o) => !o.value);
+
+  // Normalize value: ensure we ALWAYS pass a string to Radix (never undefined)
+  // so it remains in controlled mode and responds to value changes from form resets.
+  // - undefined/'' with __all__ option → '__all__'
+  // - undefined/'' without __all__ option → '' (controlled, shows placeholder)
+  // - otherwise → the value as-is
+  const safeValue = value ?? '';
+  const radixValue = safeValue === ''
+    ? (hasAllOption ? '__all__' : '')
+    : safeValue;
+
+  // Find the display label for the current value to render it directly,
+  // since items inside Portal/Content are not mounted until dropdown opens.
+  const selectedLabel = radixValue
+    ? options.find((o) => (o.value || '__all__') === radixValue)?.label
+    : undefined;
+
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
       {label && (
@@ -50,7 +69,7 @@ export function Select({
       )}
 
       <RadixSelect.Root
-        value={value === '' ? '__all__' : value}
+        value={radixValue}
         onValueChange={(v) => onValueChange?.(v === '__all__' ? '' : v)}
         disabled={disabled}
       >
@@ -61,14 +80,16 @@ export function Select({
             'text-slate-900 placeholder-slate-400 transition-colors duration-150',
             'focus:outline-none focus:ring-2 focus:ring-offset-0',
             'disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400',
-            'data-[placeholder]:text-slate-400',
+            !selectedLabel && 'text-slate-400',
             size === 'sm' ? 'h-8' : 'h-10',
             hasError
               ? 'border-red-400 focus:border-red-400 focus:ring-red-200'
               : 'border-border focus:border-navy-500 focus:ring-navy-100',
           )}
         >
-          <RadixSelect.Value placeholder={placeholder} />
+          <RadixSelect.Value placeholder={placeholder}>
+            {selectedLabel}
+          </RadixSelect.Value>
           <RadixSelect.Icon asChild>
             <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
           </RadixSelect.Icon>
