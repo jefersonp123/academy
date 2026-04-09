@@ -35,6 +35,9 @@ apiClient.interceptors.response.use(
     // Backend wraps every response in { success, data, meta, error }
     const body = response.data;
     if (body && typeof body === 'object' && 'success' in body) {
+      if (body.meta !== null && typeof body.meta !== 'undefined') {
+        return { data: body.data, meta: body.meta };
+      }
       return body.data;
     }
     return body;

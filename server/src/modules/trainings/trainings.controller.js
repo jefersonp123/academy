@@ -37,6 +37,36 @@ export async function updateGroupStatus(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// ─── GROUP ATHLETES ──────────────────────────────────────────────────────────
+
+export async function listGroupAthletes(req, res, next) {
+  try {
+    const data = await service.listGroupAthletes(req.context.activeAcademyId, req.params.id);
+    return success(res, data);
+  } catch (err) { next(err); }
+}
+
+export async function addGroupAthletes(req, res, next) {
+  try {
+    const data = await service.addGroupAthletes(
+      req.context.activeAcademyId,
+      req.params.id,
+      req.body.athlete_enrollment_ids,
+      req.context.profileId,
+    );
+    return created(res, data);
+  } catch (err) { next(err); }
+}
+
+export async function removeGroupAthlete(req, res, next) {
+  try {
+    await service.removeGroupAthlete(req.context.activeAcademyId, req.params.id, req.params.enrollmentId);
+    return success(res, null);
+  } catch (err) { next(err); }
+}
+
+// ─── SESSIONS ────────────────────────────────────────────────────────────────
+
 export async function listSessions(req, res, next) {
   try {
     const pagination = getPagination(req.query);

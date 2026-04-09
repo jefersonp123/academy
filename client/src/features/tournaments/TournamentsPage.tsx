@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Search, Trophy, MapPin, Calendar } from 'lucide-react'
@@ -9,10 +9,11 @@ import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/lib/utils'
 
 import { tournamentsApi } from '@/lib/api/tournaments'
+import { trainingsApi } from '@/lib/api/trainings'
 import { useAuthStore } from '@/store/authStore'
 import {
-  PageHeader, Button, Input, Card, CardContent,
-  StatusBadge, EmptyState, Skeleton, Modal, Badge,
+  PageHeader, Button, Input, Select, Card, CardContent,
+  StatusBadge, EmptyState, Skeleton, Modal,
 } from '@/components/ui'
 import { formatDate } from '@/lib/formatters'
 import { ROUTES } from '@/lib/constants'
@@ -24,6 +25,11 @@ const createSchema = z.object({
   start_date: z.string().min(1, 'Fecha de inicio requerida'),
   end_date: z.string().min(1, 'Fecha de fin requerida'),
   description: z.string().optional(),
+  expected_cost: z.coerce.number().min(0).optional(),
+  expected_income: z.coerce.number().min(0).optional(),
+  training_group_id: z.string().optional(),
+  format: z.string().optional(),
+  is_local_organizer: z.boolean().optional(),
 })
 
 type CreateFormValues = z.infer<typeof createSchema>
@@ -43,16 +49,29 @@ export function TournamentsPage() {
       status: statusFilter || undefined,
     }),
     enabled: !!academyId,
+    staleTime: 60_000,
+  })
+
+  const { data: groups } = useQuery({
+    queryKey: ['trainings.list', academyId],
+    queryFn: () => trainingsApi.listGroups(academyId),
+    enabled: !!academyId && showCreate,
+    staleTime: 120_000,
   })
 
   const tournaments: Tournament[] = tournamentsRes?.data ?? []
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<CreateFormValues>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema),
+    defaultValues: { is_local_organizer: false },
   })
 
   const { mutate: createTournament, isPending } = useMutation({
-    mutationFn: (data: CreateFormValues) => tournamentsApi.create(academyId, data),
+    mutationFn: (data: CreateFormValues) => tournamentsApi.create(academyId, {
+      ...data,
+      training_group_id: data.training_group_id || null,
+      format: data.format || null,
+    }),
     onSuccess: () => {
       toast.success('Torneo creado')
       qc.invalidateQueries({ queryKey: ['tournaments.list', academyId] })
@@ -62,12 +81,26 @@ export function TournamentsPage() {
     onError: (err) => toast.error(getApiErrorMessage(err, 'Error al crear torneo')),
   })
 
+  const groupOptions = [
+    { value: '', label: 'Sin grupo asignado' },
+    ...(groups ?? []).map((g) => ({ value: g.id, label: g.name })),
+  ]
+
+  const formatOptions = [
+    { value: '', label: 'Sin especificar' },
+    { value: 'elimination', label: 'Eliminación directa' },
+    { value: 'round_robin', label: 'Todos contra todos' },
+    { value: 'groups_then_elimination', label: 'Grupos + Eliminación' },
+    { value: 'other', label: 'Otro' },
+  ]
+
   const statusTabs = [
     { value: '', label: 'Todos' },
     { value: 'planned', label: 'Planificados' },
     { value: 'callup_launched', label: 'Convocatoria Activa' },
     { value: 'in_progress', label: 'En Progreso' },
     { value: 'finished', label: 'Finalizados' },
+    { value: 'cancelled', label: 'Cancelados' },
   ]
 
   return (
@@ -111,7 +144,7 @@ export function TournamentsPage() {
       {/* List */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[1,2,3,4].map(i => <Skeleton key={i} className="h-40 rounded-xl" />)}
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-40 rounded-xl" />)}
         </div>
       ) : tournaments.length === 0 ? (
         <EmptyState
@@ -142,6 +175,9 @@ export function TournamentsPage() {
                           <span className="text-xs text-slate-500">{t.location}</span>
                         </div>
                       )}
+                      {t.training_groups?.name && (
+                        <p className="text-xs text-navy-600 mt-0.5">{t.training_groups.name}</p>
+                      )}
                     </div>
                   </div>
                   <StatusBadge status={t.status} size="sm" />
@@ -160,7 +196,7 @@ export function TournamentsPage() {
       )}
 
       {/* Create Modal */}
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Crear Torneo" size="md">
+      <Modal open={showCreate} onClose={() => { reset(); setShowCreate(false) }} title="Crear Torneo" size="md">
         <form onSubmit={handleSubmit((d) => createTournament(d))} className="px-6 pb-6 space-y-4">
           <Input label="Nombre *" placeholder="Copa Primavera 2026" error={errors.name?.message} {...register('name')} fullWidth />
           <Input label="Ubicación" placeholder="Estadio Municipal" {...register('location')} fullWidth />
@@ -168,9 +204,41 @@ export function TournamentsPage() {
             <Input label="Inicio *" type="date" error={errors.start_date?.message} {...register('start_date')} fullWidth />
             <Input label="Fin *" type="date" error={errors.end_date?.message} {...register('end_date')} fullWidth />
           </div>
+          <Controller
+            name="training_group_id"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Grupo / Equipo"
+                options={groupOptions}
+                value={field.value ?? ''}
+                onValueChange={field.onChange}
+              />
+            )}
+          />
+          <Controller
+            name="format"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label="Formato del torneo"
+                options={formatOptions}
+                value={field.value ?? ''}
+                onValueChange={field.onChange}
+              />
+            )}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Presupuesto Gasto" type="number" step="0.01" placeholder="0.00" {...register('expected_cost')} fullWidth />
+            <Input label="Previsión Ingreso" type="number" step="0.01" placeholder="0.00" {...register('expected_income')} fullWidth />
+          </div>
           <Input label="Descripción" placeholder="Detalles del torneo" {...register('description')} fullWidth />
+          <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none">
+            <input type="checkbox" className="rounded text-navy-600" {...register('is_local_organizer')} />
+            Somos organizadores del torneo
+          </label>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" type="button" onClick={() => setShowCreate(false)} disabled={isPending}>Cancelar</Button>
+            <Button variant="outline" type="button" onClick={() => { reset(); setShowCreate(false) }} disabled={isPending}>Cancelar</Button>
             <Button type="submit" loading={isPending}>Crear Torneo</Button>
           </div>
         </form>

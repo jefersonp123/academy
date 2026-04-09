@@ -24,7 +24,7 @@ import type { AttendanceStatus, AttendanceRecord, TrainingSession, TrainingGroup
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type LocalStatus = AttendanceStatus
+type LocalStatus = AttendanceStatus | null
 
 interface AthleteAttendanceRow {
   enrollmentId: string
@@ -35,10 +35,8 @@ interface AthleteAttendanceRow {
   hasNote: boolean
 }
 
-// ─── Status Pill ─────────────────────────────────────────────────────────────
-
 interface StatusPillProps {
-  code: LocalStatus
+  code: string
   label: string
   activeColor: string
   selected: boolean
@@ -312,10 +310,12 @@ export function AttendancePage() {
   // ── Bulk save mutation ─────────────────────────────────────────────────────
   const { mutate: saveAttendance, isPending: saving } = useMutation({
     mutationFn: () => {
-      const records = Array.from(statusMap.entries()).map(([enrollmentId, status]) => ({
-        athlete_enrollment_id: enrollmentId,
-        attendance_status: status,
-      }))
+      const records = Array.from(statusMap.entries())
+        .filter(([_, status]) => status !== null)
+        .map(([enrollmentId, status]) => ({
+          athlete_enrollment_id: enrollmentId,
+          attendance_status: status as AttendanceStatus,
+        }))
       return attendanceApi.bulkRecord(academyId, loadedSessionId, records)
     },
     onSuccess: () => {
@@ -344,7 +344,11 @@ export function AttendancePage() {
   const handleStatusChange = (enrollmentId: string, status: LocalStatus) => {
     setStatusMap((prev) => {
       const next = new Map(prev)
-      next.set(enrollmentId, status)
+      if (next.get(enrollmentId) === status) {
+        next.set(enrollmentId, null) // Toggle off
+      } else {
+        next.set(enrollmentId, status)
+      }
       return next
     })
   }
