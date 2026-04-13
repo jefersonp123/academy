@@ -10,6 +10,7 @@ import { getApiErrorMessage } from '@/lib/utils'
 
 import { trainingsApi } from '@/lib/api/trainings'
 import { categoriesApi } from '@/lib/api/categories'
+import { membershipsApi } from '@/lib/api/memberships'
 import { useAuthStore } from '@/store/authStore'
 import {
   PageHeader,
@@ -29,7 +30,7 @@ import type { TrainingGroup } from '@/types'
 const createTrainingSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   category_id: z.string().optional(),
-  coach_name: z.string().optional(),
+  coach_profile_id: z.string().optional(),
   location: z.string().optional(),
   schedule: z.string().optional(),
   athlete_limit: z.coerce.number().int().min(1).optional().or(z.literal('')),
@@ -58,6 +59,20 @@ function CreateTrainingModal({ open, onClose, academyId }: CreateTrainingModalPr
     ...(categories ?? []).map((c) => ({ value: c.id, label: c.name })),
   ]
 
+  const { data: coachesResponse } = useQuery({
+    queryKey: ['memberships.list', academyId, 'coach'],
+    queryFn: () => membershipsApi.list(academyId, { role_code: 'coach', limit: 100 }),
+    enabled: !!academyId && open,
+  })
+
+  const coachOptions = [
+    { value: '', label: 'Sin entrenador asignado' },
+    ...(coachesResponse?.data ?? []).map((m) => ({
+      value: m.profile_id,
+      label: `${m.profiles?.first_name} ${m.profiles?.last_name}`,
+    })),
+  ]
+
   const {
     register,
     handleSubmit,
@@ -73,6 +88,7 @@ function CreateTrainingModal({ open, onClose, academyId }: CreateTrainingModalPr
       trainingsApi.createGroup(academyId, {
         name: data.name,
         category_id: data.category_id || undefined,
+        coach_profile_id: data.coach_profile_id || undefined,
         location: data.location || undefined,
       }),
     onSuccess: () => {
@@ -117,10 +133,18 @@ function CreateTrainingModal({ open, onClose, academyId }: CreateTrainingModalPr
             />
           )}
         />
-        <Input
-          label="Entrenador"
-          placeholder="Nombre del entrenador"
-          {...register('coach_name')}
+        <Controller
+          name="coach_profile_id"
+          control={control}
+          render={({ field }) => (
+            <Select
+              label="Entrenador"
+              options={coachOptions}
+              value={field.value ?? ''}
+              onValueChange={field.onChange}
+              placeholder="Seleccionar entrenador"
+            />
+          )}
         />
         <Input
           label="Horario"
@@ -189,6 +213,12 @@ function TrainingCard({ group, onClick, onViewSessions }: TrainingCardProps) {
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
             <span>{group.location}</span>
+          </div>
+        )}
+        {group.coach && (
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <User className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>{group.coach.first_name} {group.coach.last_name}</span>
           </div>
         )}
       </div>

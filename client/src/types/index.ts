@@ -214,12 +214,20 @@ export interface TrainingGroup {
   id: string;
   academy_id: string;
   category_id?: string;
+  coach_profile_id?: string;
   name: string;
   location?: string;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
   categories?: Category;
+  coach?: Profile;
+}
+
+export interface TrainingGroupAthlete {
+  id: string;
+  added_at: string;
+  athlete_academy_enrollments?: AthleteEnrollment & { athletes?: Athlete };
 }
 
 export type SessionStatus = 'scheduled' | 'completed' | 'cancelled';
@@ -454,6 +462,12 @@ export type TournamentStatus =
   | 'finished'
   | 'cancelled';
 
+export type TournamentFormat =
+  | 'elimination'
+  | 'round_robin'
+  | 'groups_then_elimination'
+  | 'other';
+
 export interface Tournament {
   id: string;
   academy_id: string;
@@ -465,9 +479,15 @@ export interface Tournament {
   status: TournamentStatus;
   expected_cost?: number;
   expected_income?: number;
+  training_group_id?: string;
+  format?: TournamentFormat;
+  is_local_organizer: boolean;
+  cancellation_reason?: string;
+  cancelled_by?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;
+  training_groups?: TrainingGroup;
 }
 
 export type CallupStatus = 'pending' | 'accepted' | 'declined' | 'cancelled';
@@ -482,8 +502,97 @@ export interface TournamentCallup {
   response_notes?: string;
   created_at: string;
   updated_at: string;
-  athlete_academy_enrollments?: AthleteEnrollment & { athletes?: Athlete };
+  athlete_academy_enrollments?: AthleteEnrollment & { athletes?: Athlete; categories?: Category };
   tournaments?: Tournament;
+}
+
+export type TournamentCostType =
+  | 'inscription'
+  | 'arbitrage'
+  | 'transport'
+  | 'uniform'
+  | 'accommodation'
+  | 'meals'
+  | 'other';
+
+export interface TournamentCost {
+  id: string;
+  academy_id: string;
+  tournament_id: string;
+  type: TournamentCostType;
+  description?: string;
+  amount: number;
+  is_confirmed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type MatchResult = 'win' | 'draw' | 'loss';
+export type MatchStage =
+  | 'group_stage'
+  | 'quarterfinal'
+  | 'semifinal'
+  | 'third_place'
+  | 'final'
+  | 'friendly';
+
+export interface TournamentMatch {
+  id: string;
+  academy_id: string;
+  tournament_id: string;
+  match_date?: string;
+  match_time?: string;
+  venue?: string;
+  opponent: string;
+  stage?: MatchStage;
+  our_score?: number;
+  opponent_score?: number;
+  result?: MatchResult;
+  notes?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  tournament_match_athletes?: TournamentMatchAthlete[];
+}
+
+export interface TournamentMatchAthlete {
+  id: string;
+  academy_id: string;
+  tournament_match_id: string;
+  athlete_enrollment_id: string;
+  attended: boolean;
+  goals: number;
+  assists: number;
+  yellow_cards: number;
+  red_cards: number;
+  is_injured: boolean;
+  injury_notes?: string;
+  performance_note?: string;
+  athlete_academy_enrollments?: AthleteEnrollment & { athletes?: Athlete };
+}
+
+export interface TournamentStats {
+  matches: {
+    total: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goals_scored: number;
+    goals_conceded: number;
+    goal_difference: number;
+    points: number;
+  };
+  callups: {
+    total: number;
+    accepted: number;
+    declined: number;
+    pending: number;
+    cancelled: number;
+  };
+  costs: {
+    total_estimated: number;
+    total_confirmed: number;
+  };
 }
 
 // ─── Notifications ───────────────────────────────────────────────────────────

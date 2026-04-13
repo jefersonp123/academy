@@ -4,16 +4,22 @@ export const createGroup = Joi.object({
   category_id: Joi.string().uuid().optional().allow(null),
   name: Joi.string().min(1).max(200).required(),
   location: Joi.string().max(200).allow('', null).optional(),
+  coach_profile_id: Joi.string().uuid().optional().allow(null),
 });
 
 export const updateGroup = Joi.object({
   name: Joi.string().min(1).max(200).optional(),
   location: Joi.string().max(200).allow('', null).optional(),
   category_id: Joi.string().uuid().allow(null).optional(),
+  coach_profile_id: Joi.string().uuid().optional().allow(null),
 });
 
 export const updateStatus = Joi.object({
   status: Joi.string().valid('active', 'inactive').required(),
+});
+
+export const addGroupAthletes = Joi.object({
+  athlete_enrollment_ids: Joi.array().items(Joi.string().uuid()).min(1).required(),
 });
 
 export const createSession = Joi.object({

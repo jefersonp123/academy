@@ -3,7 +3,9 @@ import type { Athlete, AthleteEnrollment, GuardianLink, ListParams } from '@/typ
 
 export const athletesApi = {
   list: (academyId: string, params?: ListParams) =>
-    api.get<unknown, AthleteEnrollment[]>(`/academies/${academyId}/athletes`, { params }),
+    api.get<unknown, unknown>(`/academies/${academyId}/athletes`, { params }).then((res) =>
+      (Array.isArray(res) ? res : (res as { data: AthleteEnrollment[] }).data ?? []) as AthleteEnrollment[]
+    ),
 
   create: (academyId: string, payload: Record<string, unknown>) =>
     api.post<unknown, { athlete: Athlete; enrollment: AthleteEnrollment }>(`/academies/${academyId}/athletes`, payload),

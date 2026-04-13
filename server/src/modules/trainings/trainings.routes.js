@@ -10,12 +10,19 @@ const router = Router();
 
 router.use(authMiddleware);
 
+// ─── Training groups ──────────────────────────────────────────────────────────
 router.get('/:academyId/trainings', academyContextMiddleware, requirePermission('training.read'), controller.listGroups);
 router.post('/:academyId/trainings', academyContextMiddleware, requirePermission('training.manage'), validate(schema.createGroup), controller.createGroup);
 router.get('/:academyId/trainings/:id', academyContextMiddleware, requirePermission('training.read'), controller.getGroup);
 router.patch('/:academyId/trainings/:id', academyContextMiddleware, requirePermission('training.manage'), validate(schema.updateGroup), controller.updateGroup);
 router.patch('/:academyId/trainings/:id/status', academyContextMiddleware, requirePermission('training.manage'), validate(schema.updateStatus), controller.updateGroupStatus);
 
+// ─── Group athletes ───────────────────────────────────────────────────────────
+router.get('/:academyId/trainings/:id/athletes', academyContextMiddleware, requirePermission('training.read'), controller.listGroupAthletes);
+router.post('/:academyId/trainings/:id/athletes', academyContextMiddleware, requirePermission('training.manage'), validate(schema.addGroupAthletes), controller.addGroupAthletes);
+router.delete('/:academyId/trainings/:id/athletes/:enrollmentId', academyContextMiddleware, requirePermission('training.manage'), controller.removeGroupAthlete);
+
+// ─── Sessions ─────────────────────────────────────────────────────────────────
 router.get('/:academyId/training-sessions', academyContextMiddleware, requirePermission('training.read'), controller.listSessions);
 router.post('/:academyId/training-sessions', academyContextMiddleware, requirePermission('training.manage'), validate(schema.createSession), controller.createSession);
 router.get('/:academyId/training-sessions/:id', academyContextMiddleware, requirePermission('training.read'), controller.getSession);
