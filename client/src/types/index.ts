@@ -217,6 +217,7 @@ export interface TrainingGroup {
   coach_profile_id?: string;
   name: string;
   location?: string;
+  athlete_limit: number | null;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;

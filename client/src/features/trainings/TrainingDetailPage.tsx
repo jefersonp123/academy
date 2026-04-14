@@ -49,6 +49,7 @@ const editTrainingSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   category_id: z.string().optional(),
   location: z.string().optional(),
+  athlete_limit: z.coerce.number().int().min(1).optional().or(z.literal('')),
 })
 type EditTrainingForm = z.infer<typeof editTrainingSchema>
 
@@ -173,6 +174,7 @@ function EditTrainingModal({ open, onClose, academyId, groupId, defaultValues }:
         name: data.name,
         category_id: data.category_id || undefined,
         location: data.location || undefined,
+        athlete_limit: data.athlete_limit ? Number(data.athlete_limit) : null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['training.detail', academyId, groupId] })
@@ -200,6 +202,7 @@ function EditTrainingModal({ open, onClose, academyId, groupId, defaultValues }:
           )}
         />
         <Input label="Lugar / Venue" placeholder="Ej. Cancha Principal" {...register('location')} />
+        <Input label="Límite de atletas" type="number" placeholder="Ej. 20" error={errors.athlete_limit?.message} {...register('athlete_limit')} />
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={() => { reset(defaultValues); onClose() }}>Cancelar</Button>
           <Button type="submit" loading={mutation.isPending}>Guardar Cambios</Button>
@@ -328,16 +331,16 @@ function EditSessionModal({ open, onClose, academyId, trainingGroupId, session }
 
 // ─── Add Athletes Modal ───────────────────────────────────────────────────────
 
-function AddAthletesModal({ open, onClose, academyId, groupId, alreadyInGroup }: {
-  open: boolean; onClose: () => void; academyId: string; groupId: string; alreadyInGroup: Set<string>
+function AddAthletesModal({ open, onClose, academyId, groupId, alreadyInGroup, categoryId, athleteLimit, currentCount }: {
+  open: boolean; onClose: () => void; academyId: string; groupId: string; alreadyInGroup: Set<string>; categoryId?: string; athleteLimit?: number | null; currentCount: number;
 }) {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
   const { data: enrollmentsResponse, isLoading } = useQuery({
-    queryKey: ['athletes.list', academyId, 'active'],
-    queryFn: () => athletesApi.list(academyId, { membership_status: 'active', limit: 200 }),
+    queryKey: ['athletes.list', academyId, 'active', categoryId],
+    queryFn: () => athletesApi.list(academyId, { status: 'active', limit: 200, categoryId: categoryId }),
     enabled: !!academyId && open,
     staleTime: 120_000,
   })
@@ -374,8 +377,15 @@ function AddAthletesModal({ open, onClose, academyId, groupId, alreadyInGroup }:
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        if (athleteLimit && currentCount + next.size >= athleteLimit) {
+          toast.error(`Cupo límite de ${athleteLimit} alcanzado.`)
+          return prev
+        }
+        next.add(id)
+      }
       return next
     })
   }
@@ -388,7 +398,13 @@ function AddAthletesModal({ open, onClose, academyId, groupId, alreadyInGroup }:
 
   return (
     <Modal open={open} onClose={handleClose} title="Añadir atletas al grupo" size="md">
-      <div className="px-6 pb-2">
+      <div className="px-6 pb-2 space-y-3">
+        {athleteLimit && (
+          <div className="bg-navy-50 text-navy-800 text-sm p-3 rounded-lg flex justify-between items-center">
+            <span>Atletas en el grupo: <strong>{currentCount}</strong></span>
+            <span>Límite disponible: <strong>{athleteLimit - currentCount}</strong></span>
+          </div>
+        )}
         <Input
           placeholder="Buscar atleta..."
           value={search}
@@ -458,7 +474,7 @@ function AddAthletesModal({ open, onClose, academyId, groupId, alreadyInGroup }:
 
 // ─── Athletes Tab ─────────────────────────────────────────────────────────────
 
-function AthletesTab({ academyId, groupId }: { academyId: string; groupId: string }) {
+function AthletesTab({ academyId, groupId, categoryId, athleteLimit }: { academyId: string; groupId: string; categoryId?: string | null; athleteLimit?: number | null }) {
   const queryClient = useQueryClient()
   const [addOpen, setAddOpen] = useState(false)
   const [removeEnrollmentId, setRemoveEnrollmentId] = useState<string | null>(null)
@@ -516,7 +532,14 @@ function AthletesTab({ academyId, groupId }: { academyId: string; groupId: strin
         <Button
           size="sm"
           leftIcon={<UserPlus className="w-3.5 h-3.5" />}
-          onClick={() => setAddOpen(true)}
+          onClick={() => {
+            if (athleteLimit && (groupAthletes?.length ?? 0) >= athleteLimit) {
+              toast.error(`El grupo está lleno (Límite: ${athleteLimit})`)
+              return
+            }
+            setAddOpen(true)
+          }}
+          disabled={athleteLimit ? (groupAthletes?.length ?? 0) >= athleteLimit : false}
         >
           Añadir atletas
         </Button>
@@ -597,6 +620,9 @@ function AthletesTab({ academyId, groupId }: { academyId: string; groupId: strin
         academyId={academyId}
         groupId={groupId}
         alreadyInGroup={alreadyInGroup}
+        categoryId={categoryId ?? undefined}
+        athleteLimit={athleteLimit}
+        currentCount={groupAthletes?.length ?? 0}
       />
 
       <ConfirmDialog
@@ -825,7 +851,7 @@ export function TrainingDetailPage() {
 
         {/* Athletes Tab */}
         <TabsContent value="athletes">
-          <AthletesTab academyId={academyId} groupId={id} />
+          <AthletesTab academyId={academyId} groupId={id} categoryId={group.category_id} athleteLimit={group.athlete_limit} />
         </TabsContent>
 
         {/* Sessions Tab */}
@@ -896,6 +922,10 @@ export function TrainingDetailPage() {
                 </div>
               )}
               <div className="flex justify-between items-center">
+                <span className="text-slate-500">Límite de Atletas</span>
+                <span className="font-medium text-slate-900">{group.athlete_limit || 'Sin límite'}</span>
+              </div>
+              <div className="flex justify-between items-center">
                 <span className="text-slate-500">Estado</span>
                 <StatusBadge status={group.status} size="sm" />
               </div>
@@ -936,6 +966,7 @@ export function TrainingDetailPage() {
           name: group.name,
           category_id: group.category_id ?? '',
           location: group.location ?? '',
+          athlete_limit: group.athlete_limit ?? '',
         }}
       />
       {cancelSessionId && (

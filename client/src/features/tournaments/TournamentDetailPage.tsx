@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
@@ -16,7 +16,7 @@ import { tournamentsApi } from '@/lib/api/tournaments'
 import { trainingsApi } from '@/lib/api/trainings'
 import { useAuthStore } from '@/store/authStore'
 import {
-  PageHeader, Button, Card, CardContent,
+  PageHeader, Button, Card, CardHeader, CardTitle, CardContent,
   StatusBadge, EmptyState, Skeleton, ConfirmDialog, Modal, Input, Select,
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
   Tabs, TabsList, TabsTrigger, TabsContent,
@@ -25,7 +25,8 @@ import { formatDate, formatCurrency } from '@/lib/formatters'
 import { ROUTES } from '@/lib/constants'
 import type {
   Tournament, TournamentCallup, TournamentCost, TournamentMatch,
-  TournamentMatchAthlete, TournamentCostType, MatchStage,
+  TournamentMatchAthlete, TournamentCostType, MatchStage, AthleteEnrollment,
+  Athlete, Category,
 } from '@/types'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -50,7 +51,7 @@ const STAGE_LABELS: Record<MatchStage, string> = {
 }
 
 const RESULT_STYLES = {
-  win:  { label: 'G', bg: 'bg-emerald-500 text-white' },
+  win: { label: 'G', bg: 'bg-emerald-500 text-white' },
   draw: { label: 'E', bg: 'bg-amber-400 text-white' },
   loss: { label: 'P', bg: 'bg-red-500 text-white' },
 }
@@ -280,7 +281,7 @@ function AddCallupsModal({ open, onClose, academyId, tournamentId }: {
             {search ? 'Sin coincidencias' : 'No hay atletas disponibles para convocar'}
           </div>
         ) : (
-          filtered.map((enrollment) => {
+          filtered.map((enrollment: AthleteEnrollment & { athletes?: Athlete; categories?: Category }) => {
             const isSelected = selectedIds.has(enrollment.id)
             const name = `${enrollment.athletes?.first_name ?? ''} ${enrollment.athletes?.last_name ?? ''}`
             const initials = name.trim().split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase()

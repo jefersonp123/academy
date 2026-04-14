@@ -82,7 +82,7 @@ export function AthletesPage() {
       athletesApi.list(academyId, {
         search: search || undefined,
         status: statusFilter || undefined,
-        category_id: categoryFilter || undefined,
+        categoryId: categoryFilter || undefined,
         limit: 50,
       }),
     enabled: !!academyId,

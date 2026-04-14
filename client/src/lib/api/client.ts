@@ -28,7 +28,18 @@ apiClient.interceptors.request.use(
 );
 
 let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
+let refreshQueue: Array<{ resolve: (value: unknown) => void; reject: (reason?: any) => void }> = [];
+
+function processQueue(error: Error | null, token: string | null) {
+  refreshQueue.forEach((promise) => {
+    if (error) {
+      promise.reject(error);
+    } else {
+      promise.resolve(token);
+    }
+  });
+  refreshQueue = [];
+}
 
 apiClient.interceptors.response.use(
   (response) => {
@@ -47,10 +58,16 @@ apiClient.interceptors.response.use(
 
     if (error.response?.status === 401 && !original._retry) {
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          refreshQueue.push((token) => {
-            original.headers.Authorization = `Bearer ${token}`;
-            resolve(apiClient(original));
+        // Wait for the refresh to complete
+        return new Promise((resolve, reject) => {
+          refreshQueue.push({
+            resolve: (token) => {
+              original.headers.Authorization = `Bearer ${token}`;
+              resolve(apiClient(original));
+            },
+            reject: () => {
+              reject({ code: 'UNAUTHORIZED', message: 'Session expired' });
+            },
           });
         });
       }
@@ -64,14 +81,16 @@ apiClient.interceptors.response.use(
         await store.refreshTokens();
         const newStore = await getAuthStore();
         const token = newStore.accessToken!;
-        refreshQueue.forEach((cb) => cb(token));
-        refreshQueue = [];
+        processQueue(null, token);
         original.headers.Authorization = `Bearer ${token}`;
         return apiClient(original);
-      } catch {
-        refreshQueue = [];
+      } catch (refreshError) {
+        // Refresh failed - force logout and redirect
+        processQueue(refreshError as Error, null);
         const store = await getAuthStore();
         store.logout();
+        // Clear localStorage to prevent stale tokens
+        localStorage.removeItem('club-auth');
         window.location.href = '/login';
         return Promise.reject({ code: 'UNAUTHORIZED', message: 'Session expired' });
       } finally {

@@ -5,7 +5,7 @@ export const trainingsApi = {
   listGroups: (academyId: string, params?: Record<string, unknown>) =>
     api.get<unknown, TrainingGroup[]>(`/academies/${academyId}/trainings`, { params }),
 
-  createGroup: (academyId: string, payload: { name: string; category_id?: string; coach_profile_id?: string; location?: string }) =>
+  createGroup: (academyId: string, payload: { name: string; category_id?: string; coach_profile_id?: string; location?: string; athlete_limit?: number }) =>
     api.post<unknown, TrainingGroup>(`/academies/${academyId}/trainings`, payload),
 
   getGroup: (academyId: string, id: string) =>

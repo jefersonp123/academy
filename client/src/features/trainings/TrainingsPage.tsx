@@ -29,11 +29,11 @@ import type { TrainingGroup } from '@/types'
 
 const createTrainingSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
-  category_id: z.string().optional(),
-  coach_profile_id: z.string().optional(),
-  location: z.string().optional(),
-  schedule: z.string().optional(),
-  athlete_limit: z.coerce.number().int().min(1).optional().or(z.literal('')),
+  category_id: z.string().min(1, 'La categoría es requerida'),
+  coach_profile_id: z.string().min(1, 'El entrenador es requerido'),
+  location: z.string().min(1, 'El lugar es requerido'),
+  schedule: z.string().min(1, 'El horario es requerido'),
+  athlete_limit: z.coerce.number().int().min(1, 'El límite es requerido'),
 })
 type CreateTrainingForm = z.infer<typeof createTrainingSchema>
 
@@ -90,6 +90,7 @@ function CreateTrainingModal({ open, onClose, academyId }: CreateTrainingModalPr
         category_id: data.category_id || undefined,
         coach_profile_id: data.coach_profile_id || undefined,
         location: data.location || undefined,
+        athlete_limit: data.athlete_limit ? Number(data.athlete_limit) : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trainings.list', academyId] })
@@ -125,11 +126,12 @@ function CreateTrainingModal({ open, onClose, academyId }: CreateTrainingModalPr
           control={control}
           render={({ field }) => (
             <Select
-              label="Categoría"
+              label="Categoría *"
               options={categoryOptions}
               value={field.value ?? ''}
               onValueChange={field.onChange}
               placeholder="Seleccionar categoría"
+              error={errors.category_id?.message}
             />
           )}
         />
@@ -138,28 +140,32 @@ function CreateTrainingModal({ open, onClose, academyId }: CreateTrainingModalPr
           control={control}
           render={({ field }) => (
             <Select
-              label="Entrenador"
+              label="Entrenador *"
               options={coachOptions}
               value={field.value ?? ''}
               onValueChange={field.onChange}
               placeholder="Seleccionar entrenador"
+              error={errors.coach_profile_id?.message}
             />
           )}
         />
         <Input
-          label="Horario"
+          label="Horario *"
           placeholder="Ej. L-M-V 18:00"
+          error={errors.schedule?.message}
           {...register('schedule')}
         />
         <Input
-          label="Lugar / Venue"
+          label="Lugar / Venue *"
           placeholder="Ej. Cancha Principal"
+          error={errors.location?.message}
           {...register('location')}
         />
         <Input
-          label="Límite de atletas"
+          label="Límite de atletas *"
           type="number"
           placeholder="Ej. 20"
+          error={errors.athlete_limit?.message}
           {...register('athlete_limit')}
         />
         <div className="flex justify-end gap-2 pt-2">

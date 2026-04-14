@@ -4,7 +4,7 @@ import { AppError } from '../../core/errors/AppError.js';
 export async function listGroups(academyId, filters) {
   let query = supabaseAdmin
     .from('training_groups')
-    .select('id, name, location, status, created_at, coach_profile_id, categories(id, name), coach:profiles!coach_profile_id(id, first_name, last_name, avatar_url)')
+    .select('id, name, location, status, created_at, athlete_limit, coach_profile_id, categories(id, name), coach:profiles!coach_profile_id(id, first_name, last_name, avatar_url)')
     .eq('academy_id', academyId)
     .order('name', { ascending: true });
 
@@ -84,11 +84,23 @@ export async function listGroupAthletes(academyId, groupId) {
 export async function addGroupAthletes(academyId, groupId, enrollmentIds, addedBy) {
   const { data: group } = await supabaseAdmin
     .from('training_groups')
-    .select('id')
+    .select('id, athlete_limit')
     .eq('academy_id', academyId)
     .eq('id', groupId)
     .single();
   if (!group) throw new AppError('Training group not found', 404, 'NOT_FOUND');
+
+  // Verify limit
+  if (group.athlete_limit) {
+    const { count: currentCount } = await supabaseAdmin
+      .from('training_group_athletes')
+      .select('*', { count: 'exact', head: true })
+      .eq('training_group_id', groupId);
+
+    if (currentCount + enrollmentIds.length > group.athlete_limit) {
+      throw new AppError(`Cannot exceed group athlete limit. Available slots: ${group.athlete_limit - currentCount}`, 400, 'LIMIT_EXCEEDED');
+    }
+  }
 
   // Verify all enrollments belong to this academy
   const { data: validEnrollments } = await supabaseAdmin

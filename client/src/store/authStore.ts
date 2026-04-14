@@ -102,6 +102,8 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
       logout: () => {
         queryClient.clear();
+        // Clear localStorage to remove stale tokens
+        localStorage.removeItem('club-auth');
         set({
           user: null,
           accessToken: null,
@@ -117,13 +119,24 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 
       refreshTokens: async () => {
         const { refreshToken } = get();
-        if (!refreshToken) throw new Error('No refresh token');
-        const res = await authApi.refresh(refreshToken);
-        set({
-          accessToken: res.access_token,
-          refreshToken: res.refresh_token,
-          expiresAt: res.expires_at,
-        });
+        if (!refreshToken) {
+          // No refresh token available, force logout
+          get().logout();
+          throw new Error('No refresh token');
+        }
+        try {
+          const res = await authApi.refresh(refreshToken);
+          set({
+            accessToken: res.access_token,
+            refreshToken: res.refresh_token,
+            expiresAt: res.expires_at,
+          });
+        } catch (error) {
+          // Refresh failed - clear tokens and force logout
+          console.error('Token refresh failed:', error);
+          get().logout();
+          throw error;
+        }
       },
 
       selectAcademy: async (academy, role) => {
